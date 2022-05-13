@@ -1,4 +1,4 @@
-# medidor_internet
+# medidor de internet
 <p>Um printador de tela simples onde: </p>
 <p>
   <ul>
