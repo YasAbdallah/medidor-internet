@@ -31,7 +31,5 @@ try:
 except Exception as e:
     print(e)
     driver.close()
-    driver.quit()
 else:
     driver.close()
-    driver.quit()
