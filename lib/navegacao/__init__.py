@@ -55,7 +55,7 @@ class Navegar:
 
     def capturarTexto(self, xpath):
         try:
-            return self.driver.find_element(By.XPATH, xpath).getText()
+           self.driver.find_element(By.XPATH, xpath).getText()
         except Exception as e:
             self.fecharNavegador()
 

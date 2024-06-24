@@ -48,23 +48,23 @@ try:
             sleep(45)
             driver.navegar('//button[text() = "Close"]')
 
+            speedTest_download = driver.capturarTexto('//span[@class="result-data-large number result-data-value download-speed"]')
+            speedTest_upload = driver.capturarTexto('//span[@class="result-data-large number result-data-value upload-speed"]')
             sleep(3)
             imagem = ImageGrab.grab()
             imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'speedTeste.png'))
-            speedTest_download = driver.capturarTexto('//span[@class="result-data-large number result-data-value download-speed"]')
-            speedTest_upload = driver.capturarTexto('//span[@class="result-data-large number result-data-value upload-speed"]')
         else:
             driver.navegar('//button[@type="button" and text()="Iniciar"]')
             sleep(60)
-            imagem = ImageGrab.grab()
-            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
             minha_conexao_download = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[2]/div/span[3]')
             minha_conexao_upload = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[3]/div/span[3]')
+            imagem = ImageGrab.grab()
+            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
 except Exception as e:
     driver.fecharNavegador()
 else:
     driver.fecharNavegador()
-    
+
     CAMINHO_PLANILHA_MEDICAO = 'D:\Temp\Controle mensal de velocidade.xlsx'
 
     if not os.path.isfile(CAMINHO_PLANILHA_MEDICAO):
