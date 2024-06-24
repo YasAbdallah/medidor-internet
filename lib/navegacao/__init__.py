@@ -51,7 +51,15 @@ class Navegar:
             self.driver.find_element(By.XPATH, xpath).send_keys(texto) if texto != "" else self.driver.find_element(By.XPATH, xpath).click()
         except Exception as e:
             self.fecharNavegador()
-    
+
+
+    def capturarTexto(self, xpath):
+        try:
+            return self.driver.find_element(By.XPATH, xpath).getText()
+        except Exception as e:
+            self.fecharNavegador()
+
+
     def fecharNavegador(self):
         try:
             self.driver.close()

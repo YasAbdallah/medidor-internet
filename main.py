@@ -1,9 +1,33 @@
 import os
 
+import openpyxl.workbook
+
 from lib.navegacao import Navegar
 from time import sleep
 from datetime import datetime
 from PIL import ImageGrab
+import openpyxl
+from tkinter import filedialog
+from calendar import monthrange
+
+
+data_atual = datetime.now()
+# monthrange retorna o último dia do mês, basta setá-lo na data e pronto
+last_date = str(data_atual.replace(day=monthrange(data_atual.year, data_atual.month)[1])).split("-")[-1]
+quantidade_dias_mes = str(last_date).split(" ")[0]
+mes_ano = {
+    "1": "Janerio",
+    "2": "Fevereiro",
+    "3": "Março",
+    "4": "Abril",
+    "5": "Maio",
+    "6": "Junho",
+    "7": "Julho",
+    "8": "Agosto",
+    "9": "Setembro",
+    "10": "Outubro",
+    "11": "Novembro",
+    "12": "Dezembro"}
 
 LINKS = ['https://www.speedtest.net/', 'https://www.minhaconexao.com.br/']
 CAMINHO_USUARIO = f'C:\\Users\\{os.getlogin()}\\Desktop\\internet'
@@ -27,12 +51,91 @@ try:
             sleep(3)
             imagem = ImageGrab.grab()
             imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'speedTeste.png'))
+            speedTest_download = driver.capturarTexto('//span[@class="result-data-large number result-data-value download-speed"]')
+            speedTest_upload = driver.capturarTexto('//span[@class="result-data-large number result-data-value upload-speed"]')
         else:
             driver.navegar('//button[@type="button" and text()="Iniciar"]')
             sleep(60)
             imagem = ImageGrab.grab()
             imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
+            minha_conexao_download = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[2]/div/span[3]')
+            minha_conexao_upload = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[3]/div/span[3]')
 except Exception as e:
     driver.fecharNavegador()
 else:
     driver.fecharNavegador()
+    
+    CAMINHO_PLANILHA_MEDICAO = 'D:\Temp\Controle mensal de velocidade.xlsx'
+
+    if not os.path.isfile(CAMINHO_PLANILHA_MEDICAO):
+        planilha = openpyxl.Workbook()
+        planilha.save(CAMINHO_PLANILHA_MEDICAO)
+        planilha.close()
+
+    planilha = openpyxl.load_workbook(CAMINHO_PLANILHA_MEDICAO)
+    if not f"{mes_ano[str(data_atual.month)]}_{data_atual.year}" in planilha.sheetnames:
+        sheet = planilha.create_sheet(title=f"{mes_ano[str(data_atual.month)]}_{data_atual.year}")
+
+        sheet["A2"], sheet["B1"], sheet["D1"], sheet["F1"] = ("Dia", "Minha Conexão", "SpeedTest", "Média")
+        sheet.merge_cells("B1:C1")
+        sheet.merge_cells("D1:E1")
+        sheet.merge_cells("F1:G1")
+        for x in range(8):
+            if x > 1 and x % 2 == 0:
+                sheet.cell(row=2, column=x).value = "Download"
+            elif x > 1 and x % 2 == 1:
+                sheet.cell(row=2, column=x).value = "Upload"
+                
+    planilha.active = planilha[f"{mes_ano[str(data_atual.month)]}_{data_atual.year}"]
+    sheet = planilha.active
+    for linha in range(int(quantidade_dias_mes)):
+
+        # Coluna Dia
+        sheet.cell(row=linha+3, column=1).value = linha+1 if sheet.cell(row=linha+3, column=1).value == None else None
+            
+        if data_atual.day == sheet.cell(row=linha+3, column=1).value:
+            #Coluna Minha Conexao Download
+            sheet.cell(row=linha+3, column=2).value = minha_conexao_download.replace('.', ',') if sheet.cell(row=linha+3, column=2).value == None else None
+                
+            #Coluna Minha Conexao Upload
+            sheet.cell(row=linha+3, column=3).value = minha_conexao_upload.replace('.', ',') if sheet.cell(row=linha+3, column=3).value == None else None
+                
+            #Coluna Speed Test Download
+            sheet.cell(row=linha+3, column=4).value = speedTest_download.replace('.', ',') if sheet.cell(row=linha+3, column=4).value == None else None
+                
+            #Coluna Speed Test Download
+            sheet.cell(row=linha+3, column=5).value = speedTest_upload.replace('.', ',') if sheet.cell(row=linha+3, column=5).value == None else None
+
+            #Coluna Média
+            celula_download_minha_conexao = f"{sheet.cell(row=linha+3, column=2).column_letter}{sheet.cell(row=linha+3, column=2).row}"
+            celula_download_speed_teste = f"{sheet.cell(row=linha+3, column=4).column_letter}{sheet.cell(row=linha+3, column=4).row}"
+
+            celula_upload_minha_conexao = f"{sheet.cell(row=linha+3, column=3).column_letter}{sheet.cell(row=linha+3, column=3).row}"
+            celula_upload_speed_teste = f"{sheet.cell(row=linha+3, column=5).column_letter}{sheet.cell(row=linha+3, column=5).row}"
+            if sheet.cell(row=linha+3, column=6).value == None:
+                sheet.cell(row=linha+3, column=6).value = f'=({celula_download_minha_conexao}+{celula_download_speed_teste})/2'
+            if sheet.cell(row=linha+3, column=7).value == None:
+                sheet.cell(row=linha+3, column=7).value = f'=({celula_upload_minha_conexao}+{celula_upload_speed_teste})/2'
+
+    media_mensal = sheet.cell(row=int(quantidade_dias_mes)+3, column=1).value = "Velocidade Média em Mbps"
+
+    primeira_celula_download = f"{sheet.cell(row=3, column=6).column_letter}{sheet.cell(row=3, column=6).row}"
+    ultima_celula_download = f"{sheet.cell(row=int(quantidade_dias_mes)+2, column=6).column_letter}{sheet.cell(row=int(quantidade_dias_mes)+2, column=6).row}"
+
+    primeira_celula_upload = f"{sheet.cell(row=3, column=7).column_letter}{sheet.cell(row=3, column=7).row}"
+    ultima_celula_upload = f"{sheet.cell(row=int(quantidade_dias_mes)+2, column=7).column_letter}{+sheet.cell(row=int(quantidade_dias_mes)+2, column=7).row}"
+
+    sheet.cell(row=int(quantidade_dias_mes)+3, column=6).value = f"=SUM({primeira_celula_download}:{ultima_celula_download})/{int(quantidade_dias_mes)}".upper()
+    sheet.cell(row=int(quantidade_dias_mes)+3, column=7).value = f"=SUM({primeira_celula_upload}:{ultima_celula_upload})/{int(quantidade_dias_mes)}".upper()
+
+
+    celula_media_mensal_download = f"{sheet.cell(row=int(quantidade_dias_mes)+3, column=6).column_letter}{sheet.cell(row=int(quantidade_dias_mes)+3, column=6).row}"
+    celula_media_mensal_upload = f"{sheet.cell(row=int(quantidade_dias_mes)+3, column=7).column_letter}{sheet.cell(row=int(quantidade_dias_mes)+3, column=7).row}"
+
+    # Calculo de media em porcentagem
+    sheet.cell(row=int(quantidade_dias_mes)+4, column=1).value = "Velocidade média em %"
+    sheet.cell(row=int(quantidade_dias_mes)+4, column=6).value = f"=({celula_media_mensal_download}*100)/{int(quantidade_dias_mes)}"
+    sheet.cell(row=int(quantidade_dias_mes)+4, column=7).value = f"=({celula_media_mensal_upload}*100)/{int(quantidade_dias_mes)}"
+
+    planilha.save(CAMINHO_PLANILHA_MEDICAO)
+    planilha.close()
