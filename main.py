@@ -1,44 +1,38 @@
 import os
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from lib.navegacao import Navegar
 from time import sleep
 from datetime import datetime
 from PIL import ImageGrab
 
-links = ['https://www.speedtest.net/', 'https://www.minhaconexao.com.br/']
-caminho_root = f'C:\\Users\\{os.getlogin()}\\Desktop\\internet'
-caminho_data = f'{datetime.now().year}\\{datetime.now().month}\\{datetime.now().day}'
-if not os.path.exists(os.path.join(caminho_root, caminho_data)):
-    os.makedirs(os.path.join(caminho_root, caminho_data))
-opcoes = webdriver.EdgeOptions()
-driver = webdriver.Edge(options=opcoes)
-driver.maximize_window()
+LINKS = ['https://www.speedtest.net/', 'https://www.minhaconexao.com.br/']
+CAMINHO_USUARIO = f'C:\\Users\\{os.getlogin()}\\Desktop\\internet'
+PASTA_DATA_ATUAL = f'{datetime.now().year}\\{datetime.now().month}\\{datetime.now().day}'
 
+if not os.path.exists(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL)):
+    os.makedirs(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL))
+    
+driver = Navegar("D:\scripts\webDriver")
 try:
-    for link in links:
-        driver.get(link)
+    for link in LINKS:
+        driver.abrirSite(link)
         sleep(3)
-        if link == links[0]:
-            if driver.find_element(By.XPATH, '//button[text() = "Aceitar cookies" or text() = "Continue"]'):
-                driver.find_element(By.XPATH, '//button[text() = "Aceitar cookies" or text() = "Continue"]').click()
-            driver.find_element(By.XPATH, '//span[@class="start-text"]').click()
+        if link == LINKS[0]:
+            driver.navegar('//button[text() = "Aceitar cookies" or text() = "Continue"]')
+            sleep(3)
+            driver.navegar('//span[@class="start-text"]')
             sleep(45)
-            if driver.find_element(By.XPATH, '//button[text() = "Close"]'):
-                driver.find_element(By.XPATH, '//button[text() = "Close"]').click()
+            driver.navegar('//button[text() = "Close"]')
+
             sleep(3)
             imagem = ImageGrab.grab()
-            imagem.save(os.path.join(caminho_root, caminho_data, 'speedTeste.png'))
+            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'speedTeste.png'))
         else:
-            driver.find_element(By.XPATH, '//button[@type="button" and text()="Iniciar"]').click()
+            driver.navegar('//button[@type="button" and text()="Iniciar"]')
             sleep(60)
-            driver.refresh()
-            sleep(3)
             imagem = ImageGrab.grab()
-            imagem.save(os.path.join(caminho_root, caminho_data, 'minhaConexao.png'))
+            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
 except Exception as e:
-    print(e)
-    driver.close()
+    driver.fecharNavegador()
 else:
-    driver.close()
+    driver.fecharNavegador()
