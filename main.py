@@ -1,20 +1,18 @@
 import os
 
 import openpyxl.workbook
-
 from lib.navegacao import Navegar
 from time import sleep
 from datetime import datetime
 from PIL import ImageGrab
 import openpyxl
-from tkinter import filedialog
 from calendar import monthrange
 
 
 data_atual = datetime.now()
 # monthrange retorna o último dia do mês, basta setá-lo na data e pronto
-last_date = str(data_atual.replace(day=monthrange(data_atual.year, data_atual.month)[1])).split("-")[-1]
-quantidade_dias_mes = str(last_date).split(" ")[0]
+ultimo_dia = str(data_atual.replace(day=monthrange(data_atual.year, data_atual.month)[1])).split("-")[-1]
+quantidade_dias_mes = str(ultimo_dia).split(" ")[0]
 mes_ano = {
     "1": "Janerio",
     "2": "Fevereiro",
@@ -29,43 +27,45 @@ mes_ano = {
     "11": "Novembro",
     "12": "Dezembro"}
 
-LINKS = ['https://www.speedtest.net/', 'https://www.minhaconexao.com.br/']
-CAMINHO_USUARIO = f'C:\\Users\\{os.getlogin()}\\Desktop\\internet'
+CAMINHO_USUARIO = f'D:\\Temp\\internet'
 PASTA_DATA_ATUAL = f'{datetime.now().year}\\{datetime.now().month}\\{datetime.now().day}'
 
 if not os.path.exists(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL)):
     os.makedirs(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL))
     
-driver = Navegar("D:\scripts\webDriver")
+driver = Navegar("D:\\scripts\\webDriver")
 try:
-    for link in LINKS:
-        driver.abrirSite(link)
-        sleep(3)
-        if link == LINKS[0]:
-            driver.navegar('//button[text() = "Aceitar cookies" or text() = "Continue"]')
-            sleep(3)
-            driver.navegar('//span[@class="start-text"]')
-            sleep(45)
-            driver.navegar('//button[text() = "Close"]')
+    driver.abrirSite('https://www.speedtest.net/')
+    driver.clicar('//button[text() = "Aceitar cookies" or text() = "Continue" or text() = "Continuar"]')
+    driver.clicar('//span[@class="start-text"]')
+    sleep(45)
+    driver.clicar('//button[text() = "Close"]')
+   
+    speedtest_download = str(driver.capturarTexto('//span[@class="result-data-large number result-data-value download-speed"]'))
+    speedtest_upload = str(driver.capturarTexto('//span[@class="result-data-large number result-data-value upload-speed"]'))
 
-            speedTest_download = driver.capturarTexto('//span[@class="result-data-large number result-data-value download-speed"]')
-            speedTest_upload = driver.capturarTexto('//span[@class="result-data-large number result-data-value upload-speed"]')
-            sleep(3)
-            imagem = ImageGrab.grab()
-            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'speedTeste.png'))
-        else:
-            driver.navegar('//button[@type="button" and text()="Iniciar"]')
-            sleep(60)
-            minha_conexao_download = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[2]/div/span[3]')
-            minha_conexao_upload = driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[3]/div/span[3]')
-            imagem = ImageGrab.grab()
-            imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
+    imagem = ImageGrab.grab()
+    imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'speedTeste.png'))
 except Exception as e:
-    driver.fecharNavegador()
-else:
+    print("Ocorreu um erro ao tentar medir a velocidade da internet do site SpeedTest.")
+finally:
     driver.fecharNavegador()
 
-    CAMINHO_PLANILHA_MEDICAO = 'D:\Temp\Controle mensal de velocidade.xlsx'
+try:
+    driver.abrirSite('https://www.minhaconexao.com.br/')
+    driver.clicar('//button[@type="button" and text()="Iniciar"]')
+    sleep(60)
+    minha_conexao_download = str(driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[2]/div/span[3]')).split(" ")[0]
+    minha_conexao_upload = str(driver.capturarTexto('/html/body/section[1]/div/div[2]/div[2]/div[7]/div/div[1]/div[3]/div/span[3]')).split(" ")[0]
+    imagem = ImageGrab.grab()
+    imagem.save(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL, 'minhaConexao.png'))
+except Exception as e:
+    print("Ocorreu um erro ao tentar medir a velocidade da internet no site Minha Conexao.")
+finally:
+    driver.fecharNavegador() 
+    
+try:   
+    CAMINHO_PLANILHA_MEDICAO = 'D:\\Temp\\Controle mensal de velocidade.xlsx'
 
     if not os.path.isfile(CAMINHO_PLANILHA_MEDICAO):
         planilha = openpyxl.Workbook()
@@ -101,10 +101,10 @@ else:
             sheet.cell(row=linha+3, column=3).value = minha_conexao_upload.replace('.', ',') if sheet.cell(row=linha+3, column=3).value == None else None
                 
             #Coluna Speed Test Download
-            sheet.cell(row=linha+3, column=4).value = speedTest_download.replace('.', ',') if sheet.cell(row=linha+3, column=4).value == None else None
+            sheet.cell(row=linha+3, column=4).value = speedtest_download.replace('.', ',') if sheet.cell(row=linha+3, column=4).value == None else None
                 
             #Coluna Speed Test Download
-            sheet.cell(row=linha+3, column=5).value = speedTest_upload.replace('.', ',') if sheet.cell(row=linha+3, column=5).value == None else None
+            sheet.cell(row=linha+3, column=5).value = speedtest_upload.replace('.', ',') if sheet.cell(row=linha+3, column=5).value == None else None
 
             #Coluna Média
             celula_download_minha_conexao = f"{sheet.cell(row=linha+3, column=2).column_letter}{sheet.cell(row=linha+3, column=2).row}"
@@ -116,7 +116,6 @@ else:
                 sheet.cell(row=linha+3, column=6).value = f'=({celula_download_minha_conexao}+{celula_download_speed_teste})/2'
             if sheet.cell(row=linha+3, column=7).value == None:
                 sheet.cell(row=linha+3, column=7).value = f'=({celula_upload_minha_conexao}+{celula_upload_speed_teste})/2'
-
     media_mensal = sheet.cell(row=int(quantidade_dias_mes)+3, column=1).value = "Velocidade Média em Mbps"
 
     primeira_celula_download = f"{sheet.cell(row=3, column=6).column_letter}{sheet.cell(row=3, column=6).row}"
@@ -139,3 +138,5 @@ else:
 
     planilha.save(CAMINHO_PLANILHA_MEDICAO)
     planilha.close()
+except Exception as e:
+    print("Ocorreu um erro ao tentar fazer a planilha.", "ERRO: ", e)
