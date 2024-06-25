@@ -30,7 +30,7 @@ class Navegar:
             opcoes = webdriver.EdgeOptions()
             self.driver = webdriver.Edge(options=opcoes)
             self.driver.maximize_window()
-            self.driver.get(url)
+            return self.driver.get(url)
         except Exception as e:
             download = Download()
             download.download(self.pathWebDriver)
@@ -38,30 +38,48 @@ class Navegar:
             download.deletarZip()
             self.abrirSite()
             
-            
-    def navegar(self, xpath, texto = ""):
+    
+    def clicar(self, xpath):
         """Descrição:
-            Realiza a navegação no site e preenche os campos de texto.
+            Realiza a navegação no site.
 
         Args:
-            xpath (String): Xpath dos buttons e inputs.
-            texto (String, opcional): Texto para preencher os inputs . Por padrão "". Obs.: Caso o texto fique em branco o metodo só vai clicar em botões.
+            xpath (String): Xpath dos buttons, selects, etc.
         """
         try:
-            self.driver.find_element(By.XPATH, xpath).send_keys(texto) if texto != "" else self.driver.find_element(By.XPATH, xpath).click()
+            self.driver.find_element(By.XPATH, xpath).click() if self.driver.find_element(By.XPATH, xpath) else ""
         except Exception as e:
-            self.fecharNavegador()
+            print("Erro ao tentar clicar")
+            pass
+
+
+    def escrever(self, xpath, texto):
+        """Descrição:
+            Preenche os campos de texto.
+
+        Args:
+            xpath (String): Xpath de inputs.
+            texto (String): Texto para preencher os inputs.
+        """
+        try:
+            self.driver.find_element(By.XPATH, xpath).send_keys(texto) if self.driver.find_element(By.XPATH, xpath) else None
+        except Exception as e:
+            print("Erro ao tentar escrever.")
+            pass
 
 
     def capturarTexto(self, xpath):
         try:
-            return self.driver.find_element(By.XPATH, xpath).getText()
+            if self.driver.find_element(By.XPATH, xpath):
+                self.driver.implicitly_wait(3)
+                return self.driver.find_element(By.XPATH, xpath).text
         except Exception as e:
-            self.fecharNavegador()
-
+            print("Erro ao tentar capturar texto")
+            pass
 
     def fecharNavegador(self):
         try:
             self.driver.close()
         except Exception as e:
-            print(e)
+            print("Ocorreu um erro ao tentar fechar o navegador.", e)
+            pass
