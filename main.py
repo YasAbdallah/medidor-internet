@@ -1,11 +1,14 @@
 import os
 
 import openpyxl.workbook
+import openpyxl
+import glob
+from docx import Document
+from docx.shared import Cm
 from lib.navegacao import Navegar
 from time import sleep
 from datetime import datetime
 from PIL import ImageGrab
-import openpyxl
 from calendar import monthrange
 
 
@@ -28,7 +31,7 @@ mes_ano = {
     "12": "Dezembro"}
 
 CAMINHO_USUARIO = f'D:\\Temp\\internet'
-PASTA_DATA_ATUAL = f'{datetime.now().year}\\{datetime.now().month}\\{datetime.now().day}'
+PASTA_DATA_ATUAL = f'{data_atual.year}\\{data_atual.month}\\{data_atual.day}'
 
 if not os.path.exists(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL)):
     os.makedirs(os.path.join(CAMINHO_USUARIO, PASTA_DATA_ATUAL))
@@ -140,3 +143,17 @@ try:
     planilha.close()
 except Exception as e:
     print("Ocorreu um erro ao tentar fazer a planilha.", "ERRO: ", e)
+
+try:
+    documento = Document()
+
+    documento.add_heading("MEDIÇÕES DE VELOCIDADE")
+    for dia in range(int(quantidade_dias_mes)):
+        documento.add_paragraph(f'{dia+1}/{data_atual.month}/{data_atual.year}')
+        if os.path.exists(f"D:\\Temp\\5\\{dia+1}"):
+            for caminho_print in glob.glob(f"D:\\Temp\\5\\{dia+1}\\*.png"):
+                documento.add_picture(caminho_print, width=Cm(17.05), height=Cm(10.71))
+        documento.add_page_break()
+    documento.save(f"D:/Temp/{data_atual.month}-{data_atual.year}(Medicoes de Velocidade).docx")
+except Exception as e:
+    print("Ocorreu um erro ao tentar criar o arquivo world.", "ERRO: ", e)
